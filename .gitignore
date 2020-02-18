@@ -1,0 +1,7 @@
+.pycache/
+test.py
+test_no_cui.py
+__pycache__/
+dist/
+build/
+*.egg*
