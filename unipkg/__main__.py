@@ -2,5 +2,4 @@
 
 import unipkg
 
-if __name__ == '__main__':
-    unipkg.main()
+unipkg.main()
