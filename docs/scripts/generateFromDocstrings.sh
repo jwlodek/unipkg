@@ -7,4 +7,4 @@ then
 git clone https://github.com/jwlodek/npdoc2md
 fi
 cd npdoc2md
-python3 npdoc2md.py ../../../py_cui ../../DocstringGenerated -i __main__.py
+python3 npdoc2md.py -i ../../../py_cui -o ../../DocstringGenerated -s __main__.py
