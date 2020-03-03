@@ -1,2 +1,3 @@
 pytest
-py_cui
+py_cui>=0.0.3
+pexpect ; platfrom_system=Linux
