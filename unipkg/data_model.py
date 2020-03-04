@@ -28,6 +28,9 @@ class PackageManager:
         self.name = name
 
 
+    def get_package_info(self, package):
+        pass
+
     def search_for_packages(self, search_key: str):
         pass
 
@@ -36,6 +39,9 @@ class PackageManager:
         pass
 
 
+    def update_package(self, package, password, as_admin=False)-> None:
+        pass
+
     def install_package(self, package, password, as_admin=False) -> None:
         command_str = f'{self.name} install {package.name}'
         return EXE.execute_command(command_str, as_admin, passwd=password, expect='Password:')
@@ -43,8 +49,9 @@ class PackageManager:
 
 
     def remove_package(self, package, password, as_admin=False) -> None:
-        command_str = f'{self.name} uninstall {package.name}'
+        command_str = f'{self.name} uninstall -y {package.name}'
         return EXE.execute_command(command_str, as_admin, passwd=password, expect='Password:')
+
 
     def check_exists(self) -> bool:
         command = f'{self.name} --version'
@@ -73,8 +80,14 @@ class Pip(PackageManager):
         super().__init__(name)
 
 
+    def update_package(self, package, password, as_admin=False):
+        command_str = f'{self.name} install --upgrade {package.name}'
+        return EXE.execute_command(command_str, False)
+
+
+
     def list_packages(self) -> (List[Package], int):
-        command_str = f'{self.name} list'
+        command_str = f'{self.name} list --format=freeze'
         out, err = EXE.execute_command(command_str, False)
         if err !=0:
             return None, err
@@ -83,11 +96,8 @@ class Pip(PackageManager):
             packages = []
             for line in lines:
                 if len(line) > 0:
-                    try:
-                        name_ver = line.strip().split('==')
-                        packages.append(Package(name_ver[0], name_ver[1], '', True))
-                    except:
-                        pass
+                    name_ver = line.strip().split('==')
+                    packages.append(Package(name_ver[0], name_ver[1], '', True))
             return packages, err
 
 

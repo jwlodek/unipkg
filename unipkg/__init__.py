@@ -48,22 +48,39 @@ class UniPkgManager:
         self.package_manager_selecter.add_key_command(py_cui.keys.KEY_ENTER, self.select_package_manager)
 
 
-        self.package_selection = self.root.add_checkbox_menu(f'{self.active_package_manager} Packages', 0, 1, row_span=7, column_span=6)
+        self.package_selection = self.root.add_checkbox_menu(f'{self.active_package_manager} Packages', 0, 1, row_span=4, column_span=6)
+        self.log = self.root.add_text_block('Log/Status', 4, 1, row_span=3, column_span=6)
         self.package_selection.add_key_command(py_cui.keys.KEY_S_LOWER, self.ask_search_key)
         self.package_selection.add_key_command(py_cui.keys.KEY_L_LOWER, self.list_packages)
         self.package_selection.add_key_command(py_cui.keys.KEY_ENTER, self.mark_package)
+        self.package_selection.add_key_command(py_cui.keys.KEY_A_LOWER, self.apply)
+        self.package_selection.add_key_command(py_cui.keys.KEY_SPACE, self.show_package_info)
 
         self.marked_package_list = self.root.add_scroll_menu('Marked', 2, 0, row_span=2)
         #self.marked_packages.add_key_command(py_cui.keys.KEY_ENTER, self.unmark_package)
 
         self.apply_button = self.root.add_button('Apply', 4, 0, command=self.apply)
+        self.update_all = self.root.add_button('Update', 5, 0, command=self.update_all)
 
-        self.exit_button = self.root.add_button('Exit', 5, 0, command=exit)
+        self.exit_button = self.root.add_button('Exit', 6, 0, command=exit)
 
+        self.root.add_key_command(py_cui.keys.KEY_A_LOWER, self.apply)
         self.root.add_key_command(py_cui.keys.KEY_S_LOWER, self.ask_search_key)
-        #self.root.add_key_command(py_cui.keys.KEY_L_LOWER, self.list_installed)
+        self.root.add_key_command(py_cui.keys.KEY_L_LOWER, self.list_packages)
 
 
+    def update_all(self):
+        pass
+
+    def show_package_info(self):
+        mark_toggle_pkg = None
+        for pkg in self.opened_packages.values():
+            if f'{pkg}' == self.package_selection.view_items[self.package_selection.selected_item][6:]:
+                mark_toggle_pkg = pkg
+                break
+
+        info = supported_package_managers[self.active_package_manager].get_package_info(package)
+        self.log.set_text(info)
 
     def mark_package(self):
         
@@ -115,24 +132,29 @@ class UniPkgManager:
         self.root.show_text_box_popup('Enter a Search Key', self.search_to_install)
 
 
-    def search_to_install(self, search_key):
+    def search_to_install(self, search_key : str) -> None:
 
+        self.root.show_loading_icon_popup('Searching', f'Fetching {self.active_package_manager} package info')
         op_thread = threading.Thread(target=lambda : self.search_to_install_op(search_key))
         op_thread.start()
-        self.root.show_loading_icon_popup('Searching', f'Fetching {self.active_package_manager} package info')
 
 
-    def search_to_install_op(self, search_key):
+
+    def search_to_install_op(self, search_key: str) -> None:
         current_package_manager = supported_package_managers[self.active_package_manager]
-        packages, err = current_package_manager.search_for_packages(search_key)
-        self.root.stop_loading_popup()
-        if packages is None:
-            self.root.show_error_popup('Failed to Search', 'Unable to search for packages, check network settings.')
-        elif len(packages) == 0:
-            self.root.show_warning_popup('No Results', f'No packages were found for search key {search_key}')
-        else:
+        try:
+            packages, err = current_package_manager.search_for_packages(search_key)
+            self.root.stop_loading_popup()
+            if packages is None:
+                self.root.show_error_popup('Failed to Search', 'Unable to search for packages, check network settings.')
+            elif len(packages) == 0:
+                self.root.show_warning_popup('No Results', f'No packages were found for search key {search_key}')
+            else:
+                self.update_package_selection_list(packages)
+        except Exception as e:
+            self.root.stop_loading_popup()
+            self.root.show_error_popup('Search Failed', f'Searching for {current_package_manager.name} packages failed due to: {str(e)}')
 
-            self.update_package_selection_list(packages)
 
     def update_package_selection_list(self, packages):
         self.opened_packages.clear()
@@ -146,20 +168,25 @@ class UniPkgManager:
 
 
     def list_packages(self):
+        self.root.show_loading_icon_popup('Searching', f'Locating {self.active_package_manager} installed packages')
         op_thread = threading.Thread(target=self.list_packages_op)
         op_thread.start()
-        self.root.show_loading_icon_popup('Searching', f'Locating {self.active_package_manager} installed packages')
+
 
     def list_packages_op(self):
         current_package_manager = supported_package_managers[self.active_package_manager]
-        packages, err = current_package_manager.list_packages()
-        self.root.stop_loading_popup()
-        if packages is None:
-            self.root.show_error_popup('Failed to Search', 'Unable to locate for packages!')
-        elif len(packages) == 0:
-            self.root.show_warning_popup('No Results', 'No packages were found on local system.')
-        else:
-            self.update_package_selection_list(packages)
+        try:
+            packages, err = current_package_manager.list_packages()
+            self.root.stop_loading_popup()
+            if packages is None:
+                self.root.show_error_popup('Failed to Search', 'Unable to locate for packages!')
+            elif len(packages) == 0:
+                self.root.show_warning_popup('No Results', 'No packages were found on local system.')
+            else:
+                self.update_package_selection_list(packages)
+        except Exception as e:
+            self.root.stop_loading_popup()
+            self.root.show_error_popup('Search Failed', f'Searching for local {current_package_manager.name} packages failed due to: {str(e)}')
 
 
     def apply(self):
@@ -175,12 +202,16 @@ class UniPkgManager:
 
     def apply_op(self):
         try:
-            self.root.popup.title = 'Hello World'
             current_manager = supported_package_managers[self.active_package_manager]
 
             for pkg in self.marked_packages:
                 self.root.popup.title = f'{pkg.marked_op}ing {pkg.name}...'
-                current_manager.install_package(pkg, self.passwd)
+                if pkg.marked_op == 'Install':
+                    current_manager.install_package(pkg, self.passwd)
+                elif pkg.marked_op == 'Update':
+                    current_manager.update_package(pkg, self.passwd)
+                else:
+                    current_manager.remove_package(pkg, self.passwd)
                 self.root.increment_loading_bar()
 
             count = len(self.marked_packages)
@@ -192,7 +223,7 @@ class UniPkgManager:
             self.root.show_message_popup('Finished Applying', f'Performed {count} package operations succesffully.')
         except Exception as e:
             self.root.stop_loading_popup()
-            self.root.show_error_popup('Apply Failed', 'Applying specified packages failed due to:')
+            self.root.show_error_popup('Apply Failed', f'Applying specified packages failed due to: {str(e)}')
 
 
 
