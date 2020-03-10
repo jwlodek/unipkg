@@ -1,2 +1,2 @@
-py_cui>=0.0.2
+py_cui>=0.0.3
 #pexpect ; platform_system=Linux

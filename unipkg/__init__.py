@@ -32,7 +32,6 @@ class UniPkgManager:
 
     def __init__(self, root : py_cui.PyCUI):
         self.root = root
-        self.current_status = 'Install'
 
         self.marked_packages = []
         self.opened_packages = {}
@@ -73,10 +72,10 @@ class UniPkgManager:
         pass
 
     def show_package_info(self):
-        mark_toggle_pkg = None
+        package = None
         for pkg in self.opened_packages.values():
             if f'{pkg}' == self.package_selection.view_items[self.package_selection.selected_item][6:]:
-                mark_toggle_pkg = pkg
+                package = pkg
                 break
 
         info = supported_package_managers[self.active_package_manager].get_package_info(package)
