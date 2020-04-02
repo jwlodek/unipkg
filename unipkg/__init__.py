@@ -42,9 +42,12 @@ class UniPkgManager:
 
         self.package_manager_selecter = self.root.add_scroll_menu('Managers', 0, 0, row_span=2, column_span=1)
         self.package_manager_selecter.add_item_list(find_supported_package_managers())
-        self.active_package_manager = self.package_manager_selecter.view_items[self.package_manager_selecter.selected_item][3:]
-        self.package_manager_selecter.view_items[self.package_manager_selecter.selected_item] = f'-> {self.active_package_manager}'
+
+        self.active_package_manager = self.package_manager_selecter.get_item_list()[self.package_manager_selecter.get_selected_item()][3:]
+
+        self.package_manager_selecter.get_item_list()[self.package_manager_selecter.get_selected_item()] = f'-> {self.active_package_manager}'
         self.package_manager_selecter.add_key_command(py_cui.keys.KEY_ENTER, self.select_package_manager)
+
 
 
         self.package_selection = self.root.add_checkbox_menu(f'{self.active_package_manager} Packages', 0, 1, row_span=4, column_span=6)
@@ -59,7 +62,7 @@ class UniPkgManager:
         #self.marked_packages.add_key_command(py_cui.keys.KEY_ENTER, self.unmark_package)
 
         self.apply_button = self.root.add_button('Apply', 4, 0, command=self.apply)
-        self.update_all = self.root.add_button('Update', 5, 0, command=self.update_all)
+        self.update_all_button = self.root.add_button('Update', 5, 0, command=self.update_all)
 
         self.exit_button = self.root.add_button('Exit', 6, 0, command=exit)
 
@@ -74,7 +77,7 @@ class UniPkgManager:
     def show_package_info(self):
         package = None
         for pkg in self.opened_packages.values():
-            if f'{pkg}' == self.package_selection.view_items[self.package_selection.selected_item][6:]:
+            if f'{pkg}' == self.package_selection.get_item_list()[self.package_selection.get_selected_item()][6:]:
                 package = pkg
                 break
 
@@ -85,7 +88,7 @@ class UniPkgManager:
         
         mark_toggle_pkg = None
         for pkg in self.opened_packages.values():
-            if f'{pkg}' == self.package_selection.view_items[self.package_selection.selected_item][6:]:
+            if f'{pkg}' == self.package_selection.get_item_list()[self.package_selection.get_selected_item()][6:]:
                 mark_toggle_pkg = pkg
                 break
 
@@ -119,11 +122,11 @@ class UniPkgManager:
         self.marked_packages.clear()
         self.opened_packages.clear()
         self.refresh_marked_list()
-        self.active_package_manager = self.package_manager_selecter.view_items[self.package_manager_selecter.selected_item][3:]
-        for i in range(0, len(self.package_manager_selecter.view_items)):
-            if self.package_manager_selecter.view_items[i].startswith('-> '):
-                self.package_manager_selecter.view_items[i] = f'   {self.package_manager_selecter.view_items[i][3:]}'
-        self.package_manager_selecter.view_items[self.package_manager_selecter.selected_item] = f'-> {self.active_package_manager}'
+        self.active_package_manager = self.package_manager_selecter.get_item_list()[self.package_manager_selecter.get_selected_item()][3:]
+        for i in range(0, len(self.package_manager_selecter.get_item_list())):
+            if self.package_manager_selecter.get_item_list()[i].startswith('-> '):
+                self.package_manager_selecter.get_item_list()[i] = f'   {self.package_manager_selecter.get_item_list()[i][3:]}'
+        self.package_manager_selecter.get_item_list()[self.package_manager_selecter.get_selected_item()] = f'-> {self.active_package_manager}'
         self.package_selection.title = f'{self.active_package_manager} Packages'
 
 
