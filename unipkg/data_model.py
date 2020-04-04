@@ -114,10 +114,10 @@ class Pip(PackageManager):
                     pass
                 elif 'INSTALLED' in line:
                     packages[len(packages) - 1].installed = True
-                elif '-' in line:
+                elif ' - ' in line:
                     name = line.split(' ')[0].strip()
                     version = line.split(' ')[1].strip()[1:-1]
-                    description = line.split(')', 1)[-1].strip()[2:]
+                    description = line.split(' - ', 1)[-1].strip()
                     packages.append(Package(name, version, description, False))
             return packages, 0
 
