@@ -7,3 +7,5 @@ build/
 *.egg*
 .vscode/
 venv/
+*log.txt
+temp.txt

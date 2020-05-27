@@ -23,8 +23,7 @@ from typing import List
 import threading
 
 supported_package_managers = {
-    'apt'       : PKG_MANAGERS.Aptitude('apt'),
-    'apt-get'   : PKG_MANAGERS.Aptitude('apt-get'),
+    'apt'       : PKG_MANAGERS.Aptitude(),
     'pip'       : PKG_MANAGERS.Pip('pip'),
     'pip3'      : PKG_MANAGERS.Pip('pip3'),
     'npm'       : PKG_MANAGERS.Npm('npm')
@@ -81,8 +80,8 @@ class UniPkgManager:
     def show_package_info(self):
 
         pkg = self.package_selection.get()
-        info = f'{pkg.name} - {pkg.version}\nDescription: {pkg.description}'
-        self.log.set_text('{}\n\n{}'.format(info, self.log.get()))
+        info = pkg.get_info()
+        self.update_log(info)
 
 
     def mark_package(self):
@@ -123,13 +122,16 @@ class UniPkgManager:
     def search_to_install_op(self, search_key: str) -> None:
         try:
             self.root._logger.error(self.active_package_manager)
-            packages, err = self.active_package_manager.search_for_packages(search_key)
+            packages, out, err = self.active_package_manager.search_for_packages(search_key)
             self.root.stop_loading_popup()
             if packages is None or err != 0:
-                self.root.show_error_popup('Failed to Search', 'Unable to search for packages, check network settings.')
+                self.root.show_error_popup('Failed to Search', f'Unable to search for packages: {out}')
             elif len(packages) == 0:
                 self.root.show_warning_popup('No Results', f'No packages were found for search key {search_key}')
             else:
+                if packages[0].version == '':
+                    self.update_log('Too many results found, skipped version number collection.')
+                self.update_log(f'Found {len(packages)} matching result(s)')
                 self.update_package_selection_list(packages)
         except Exception as e:
             self.root.stop_loading_popup()

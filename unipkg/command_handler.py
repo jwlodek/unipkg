@@ -6,6 +6,7 @@ import ctypes, os
 from typing import List
 from sys import platform
 from subprocess import Popen, PIPE
+import re
 
 WITH_PEXPECT=True
 
@@ -78,8 +79,8 @@ def handle_basic_command(command : str, remove_quotes : bool=True) -> (List[str]
             err = proc.returncode
         else:
             out = output.decode()
-    except:
-        out = f"Unknown error processing command: {command}"
+    except FileNotFoundError:
+        out = f"Executable not found for: {command}"
         err = -1
     return out, err
 
