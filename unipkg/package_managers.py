@@ -9,6 +9,7 @@ import unipkg.packages as PKG
 from typing import List
 from difflib import SequenceMatcher
 import operator
+import re
 
 
 class PackageManager:
@@ -68,14 +69,30 @@ class Aptitude(PackageManager):
         self.cache_name = 'apt-cache'
 
 
+    def list_packages(self):
+        command_str = f'dpkg -l --no-pager'
+        out, err = EXE.execute_command(command_str, False)
+        lines = out.splitlines()
+        output = []
+        pkg_list = False
+        for line in lines:
+            if line.startswith('+++'):
+                pkg_list = True
+            elif pkg_list:
+                temp = re.sub('\s+', ' ', line)
+                temp.split(' ', 4)
+                output.append(PKG.AptitudePackage(temp[1], temp[2], temp[4], True))
+        return output
+
+
     def search_for_packages(self, search_key: str):
         command_str = f'{self.cache_name} search {search_key}'
         out, err = EXE.execute_command(command_str, False)
 
-        installed_packages = []
-        installed, _ = EXE.execute_command('dpkg --get-selections', False)
-        for line in installed:
-            installed_packages.append(line.split(':', 1)[0])
+        installed_packages = self.list_packages()
+        installed_package_names = []
+        for pkg in installed_packages:
+            installed_package_names.append(pkg.name)
 
         if err != 0:
             return None, out, err
@@ -100,15 +117,19 @@ class Aptitude(PackageManager):
                 #_, ret_installed = EXE.execute_command(
                 #    f'dpkg -l {pkg[0]}', False)
                 is_installed = False
-                if pkg_name in installed_packages:
+                if pkg_name in installed_package_names:
                     is_installed = True
 
+                fp = open('temp.txt', 'w')
 
                 if is_installed:
                     packages.insert(0, PKG.AptitudePackage(pkg_name, '', pkg_desc, is_installed))
+                    fp.write(f'{pkg_name} is installed')
                 else:
                     packages.append(PKG.AptitudePackage(
                         pkg_name, '', pkg_desc, is_installed))
+
+                fp.close()
 
             return packages, '', 0
 
@@ -136,6 +157,7 @@ class Pip(PackageManager):
                     packages.append(PKG.PipPackage(
                         name_ver[0], name_ver[1], '', True))
             return packages, err
+    
     def search_for_packages(self, search_key: str) -> (List[PKG.PipPackage], int):
         command_str = f'{self.name} search {search_key}'
         out, err = EXE.execute_command(command_str, False)
